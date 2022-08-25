@@ -19,4 +19,5 @@ tr: !!python/tuple
 - 1060
 - 502
 videoPath: ./video/video.mp4
+prefix: video
 width: 1280

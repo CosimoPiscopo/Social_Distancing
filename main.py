@@ -1,6 +1,6 @@
 import itertools
 import math
-
+import os
 import numpy as np
 import yaml
 import cv2
@@ -8,6 +8,7 @@ import utils
 
 cmMinDist = 100
 cmCalibDist = 180
+birdScale = 1/3.5
 
 outputPath = './output/'
 weightsPath = "./yolo/yolov3.weights"
@@ -16,9 +17,9 @@ confid = 0.5
 thresh = 0.5
 
 configName = input("Inserisci il nome del file di configurazione: ")
-configName = 'vid_short.yml'
 with open("./conf/" + configName, "r") as ymlfile:
     videoData = yaml.full_load(ymlfile)
+videoName = os.path.splitext(configName)[0]
 
 cornerPoints = list()
 cornerPoints.append(videoData['tl'])
@@ -32,6 +33,7 @@ W = videoData['width']
 H = videoData['height']
 videoPath = videoData['videoPath']
 imgPath = videoData['imgPath']
+prefix = videoData['prefix']
 
 M, birdImage = utils.birdPerspectiveTransform(cornerPoints, W, H, cv2.imread(imgPath))
 
@@ -42,8 +44,7 @@ vs = cv2.VideoCapture(videoPath)
 fps = int(vs.get(cv2.CAP_PROP_FPS))
 
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
-outputMovie = cv2.VideoWriter(outputPath + "distancing.avi", fourcc, fps, (W, H))
-birdMovie = cv2.VideoWriter(outputPath + "birdEye.avi", fourcc, fps, (W, H))
+outputMovie = cv2.VideoWriter(outputPath + prefix + ".avi", fourcc, fps, (W, H))
 
 net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
 outputLayers = net.getUnconnectedOutLayersNames()
@@ -93,53 +94,52 @@ while True:
             filteredBoxes.append(boxes[i])
 
         birdPoints = utils.getTransformedGroundPoints(filteredBoxes, M)
+        status = np.zeros(len(birdPoints))
         tempBird = birdImage.copy()
-        for point in birdPoints:
-            tempBird = utils.printCircle(tempBird, point, 0)
 
-        if len(birdPoints) >= 2:
-            for index, birdPoint in enumerate(birdPoints):
-                if utils.inROI(birdPoint, W, H):
-                    frame = utils.printRectangle(frame, filteredBoxes[index], 0)
+        pairsInfo = []
 
-            listIndexes = list(itertools.combinations(range(len(birdPoints)), 2))
-            for i, pair in enumerate(itertools.combinations(birdPoints, 2)):
-                if utils.inROI(pair[0], W, H) and utils.inROI(pair[1], W, H):
-                    dist = math.dist(pair[0], pair[1])
-                    if pxMinDist < dist <= pxWarnDist:
-                        tempBird = utils.printCircle(tempBird, pair[0], 2)
-                        tempBird = utils.printCircle(tempBird, pair[1], 2)
-
-                        i1 = listIndexes[i][0]
-                        i2 = listIndexes[i][1]
-
-                        frame = utils.printRectangle(frame, filteredBoxes[i1], 2)
-                        frame = utils.printRectangle(frame, filteredBoxes[i2], 2)
-                        frame = utils.printLine(frame, filteredBoxes[i1], filteredBoxes[i2], 2)
-
-            for i, pair in enumerate(itertools.combinations(birdPoints, 2)):
+        listIndexes = list(itertools.combinations(range(len(birdPoints)), 2))
+        for i, pair in enumerate(itertools.combinations(birdPoints, 2)):
+            if utils.inROI(pair[0], W, H) and utils.inROI(pair[1], W, H):
+                idx1 = listIndexes[i][0]
+                idx2 = listIndexes[i][1]
                 dist = math.dist(pair[0], pair[1])
-                if utils.inROI(pair[0], W, H) and utils.inROI(pair[1], W, H):
-                    dist = math.dist(pair[0], pair[1])
-                    if dist <= pxMinDist:
-                        tempBird = utils.printCircle(tempBird, pair[0], 1)
-                        tempBird = utils.printCircle(tempBird, pair[1], 1)
+                if dist <= pxMinDist:
+                    status[idx1] = 1
+                    status[idx2] = 1
+                    pairsInfo.append([idx1, idx2, 1])
+                elif pxMinDist < dist <= pxWarnDist:
+                    if status[idx1] != 1:
+                        status[idx1] = 2
+                    if status[idx2] != 1:
+                        status[idx2] = 2
+                    pairsInfo.append([idx1, idx2, 2])
 
-                        i1 = listIndexes[i][0]
-                        i2 = listIndexes[i][1]
+        for index, birdPoint in enumerate(birdPoints):
+            if utils.inROI(birdPoint, W, H):
+                tempBird = utils.printCircle(tempBird, birdPoint, status[index])
+                frame = utils.printRectangle(frame, filteredBoxes[index], status[index])
 
-                        frame = utils.printRectangle(frame, filteredBoxes[i1], 1)
-                        frame = utils.printRectangle(frame, filteredBoxes[i2], 1)
-                        frame = utils.printLine(frame, filteredBoxes[i1], filteredBoxes[i2], 1)
+        for info in pairsInfo:
+            i = info[0]
+            j = info[1]
+            status = info[2]
+            frame = utils.printLine(frame, filteredBoxes[i], filteredBoxes[j], status)
+            tempBird = utils.printBirdLine(tempBird, birdPoints[i], birdPoints[j], status)
 
         pnts = np.array(cornerPoints, np.int32)
         cv2.polylines(frame, [pnts], True, (0, 0, 0), thickness=1)
 
-        outputMovie.write(frame)
-        birdMovie.write(tempBird)
+        result = frame.copy()
+        sW = int(W * birdScale)
+        sH = int(H * birdScale)
+        tempBird = cv2.resize(tempBird, (sW, sH))
+        tempBird = cv2.rotate(tempBird, cv2.ROTATE_90_CLOCKWISE)
+        result[H - sW:, :sH] = tempBird
 
-        cv2.imshow('Standard View', frame)
-        cv2.imshow('Bird View', tempBird)
+        cv2.imshow('Result', result)
+        outputMovie.write(result)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -1,7 +1,7 @@
 import math
-
 import numpy as np
 import cv2
+
 
 COLOR_RED = (0, 0, 255)
 COLOR_GREEN = (0, 255, 0)
@@ -40,7 +40,7 @@ def getTransformedPoint(pnts, M):
 def getPxMinDist(cmMinDist, cmCalibDist, pnts, M):
     t_pnt1 = getTransformedPoint(pnts[0], M)
     t_pnt2 = getTransformedPoint(pnts[1], M)
-    pxMinDist = math.dist(t_pnt1, t_pnt2) * (cmMinDist/cmCalibDist)
+    pxMinDist = math.dist(t_pnt1, t_pnt2) * (cmMinDist / cmCalibDist)
     return pxMinDist
 
 
@@ -92,5 +92,17 @@ def printLine(frame, box1, box2, status):
     x, y, w, h = box1[:]
     x1, y1, w1, h1 = box2[:]
     frame = cv2.line(frame, (int(x + w / 2), int(y + h / 2)), (int(x1 + w1 / 2), int(y1 + h1 / 2)), color, 2)
+    return frame
 
+
+def printBirdLine(frame, pnt1, pnt2, status):
+    color = None
+    match status:
+        case 0:
+            color = COLOR_GREEN
+        case 1:
+            color = COLOR_RED
+        case 2:
+            color = COLOR_YELLOW
+    frame = cv2.line(frame, pnt1.astype(int), pnt2.astype(int), color, 2)
     return frame

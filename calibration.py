@@ -24,8 +24,9 @@ def mouseCallback(event, x, y, flags, param):
 
 
 videoName = input('Inserisci il nome del video: ')
-configName = os.path.splitext(videoName)[0] + '.yml'
-imgName = os.path.splitext(videoName)[0] + '.jpg'
+prefix = os.path.splitext(videoName)[0]
+configName = prefix + '.yml'
+imgName = prefix + '.jpg'
 
 videoPath = './video/'
 imgPath = './img/'
@@ -61,6 +62,7 @@ while True:
             d2=mouse_pts[5],
             width=W,
             height=H,
+            prefix=prefix,
             videoPath=videoPath + videoName,
             imgPath=imgPath + imgName
         )

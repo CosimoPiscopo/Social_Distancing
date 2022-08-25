@@ -19,4 +19,5 @@ tr: !!python/tuple
 - 744
 - 230
 videoPath: ./video/PETS2009.avi
+prefix: PETS2009
 width: 768
