@@ -9,6 +9,8 @@ import utils
 cmMinDist = 100
 cmCalibDist = 180
 birdScale = 1/3.5
+LINE_COLOR = (0, 0, 0)
+WINDOW_NAME = 'OutputVideo'
 
 outputPath = './output/'
 weightsPath = "./yolo/yolov3.weights"
@@ -31,6 +33,7 @@ calibDistPoint = [videoData['d1'], videoData['d2']]
 
 W = videoData['width']
 H = videoData['height']
+
 videoPath = videoData['videoPath']
 imgPath = videoData['imgPath']
 prefix = videoData['prefix']
@@ -42,6 +45,8 @@ pxWarnDist = pxMinDist * 1.2
 
 vs = cv2.VideoCapture(videoPath)
 fps = int(vs.get(cv2.CAP_PROP_FPS))
+
+cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
 
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
 outputMovie = cv2.VideoWriter(outputPath + prefix + ".avi", fourcc, fps, (W, H))
@@ -129,7 +134,7 @@ while True:
             tempBird = utils.printBirdLine(tempBird, birdPoints[i], birdPoints[j], status)
 
         pnts = np.array(cornerPoints, np.int32)
-        cv2.polylines(frame, [pnts], True, (0, 0, 0), thickness=1)
+        cv2.polylines(frame, [pnts], True, LINE_COLOR, thickness=1)
 
         result = frame.copy()
         sW = int(W * birdScale)
@@ -138,7 +143,7 @@ while True:
         tempBird = cv2.rotate(tempBird, cv2.ROTATE_90_CLOCKWISE)
         result[H - sW:, :sH] = tempBird
 
-        cv2.imshow('Result', result)
+        cv2.imshow(WINDOW_NAME, result)
         outputMovie.write(result)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
