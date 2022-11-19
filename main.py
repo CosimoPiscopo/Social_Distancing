@@ -21,15 +21,10 @@ thresh = 0.5
 configName = input("Inserisci il nome del file di configurazione: ")
 with open("./conf/" + configName, "r") as ymlfile:
     videoData = yaml.full_load(ymlfile)
-videoName = os.path.splitext(configName)[0]
 
-cornerPoints = list()
-cornerPoints.append(videoData['tl'])
-cornerPoints.append(videoData['tr'])
-cornerPoints.append(videoData['br'])
-cornerPoints.append(videoData['bl'])
+cornerPoints = [videoData['tl'], videoData['tr'], videoData['br'], videoData['bl']]
 
-calibDistPoint = [videoData['d1'], videoData['d2']]
+calibDistPoints = [videoData['d1'], videoData['d2']]
 
 W = videoData['width']
 H = videoData['height']
@@ -40,7 +35,7 @@ prefix = videoData['prefix']
 
 M, birdImage = utils.birdPerspectiveTransform(cornerPoints, W, H, cv2.imread(imgPath))
 
-pxMinDist = utils.getPxMinDist(cmMinDist, cmCalibDist, calibDistPoint, M)
+pxMinDist = utils.getPxMinDist(cmMinDist, cmCalibDist, calibDistPoints, M)
 pxWarnDist = pxMinDist * 1.3
 
 vs = cv2.VideoCapture(videoPath)
@@ -62,13 +57,12 @@ while True:
         break
 
     blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416),
-                                 swapRB=True, crop=False)
+                                 swapRB=True)
     net.setInput(blob)
     layerOutputs = net.forward(outputLayers)
 
     boxes = []
     confidences = []
-    classIDs = []
 
     for output in layerOutputs:
 
@@ -88,7 +82,6 @@ while True:
 
                     boxes.append([x, y, int(boxWidth), int(boxHeight)])
                     confidences.append(float(confidence))
-                    classIDs.append(classID)
 
     indices = cv2.dnn.NMSBoxes(boxes, confidences, confid, thresh)
 
@@ -145,7 +138,7 @@ while True:
         cv2.imshow(WINDOW_NAME, result)
         outputMovie.write(result)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) == ord('q'):
             break
 
 vs.release()

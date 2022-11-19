@@ -5,24 +5,25 @@ import yaml
 mouse_pts = []
 DOT_SIZE = 5
 CORNER_DOT_COLOR = LINE_COLOR = (0, 0, 0)
-DISTANCE_DOT_COLOR = (255, 0, 0)
+DISTANCE_DOT_COLOR = DISTANCE_LINE_COLOR = (255, 0, 0)
 LINE_THICK = 1
 WINDOW_NAME = 'CalibImage'
 
 
 def mouseCallback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
-        if len(mouse_pts) < 4:
+        mouse_pts.append((x, y))
+        if len(mouse_pts) <= 4:
             cv2.circle(frame, (x, y), DOT_SIZE, CORNER_DOT_COLOR, -1)
-            if 1 <= len(mouse_pts) <= 3:
-                cv2.line(frame, (x, y), (mouse_pts[len(mouse_pts) - 1][0], mouse_pts[len(mouse_pts) - 1][1]),
+            if len(mouse_pts) != 1:
+                cv2.line(frame, (x, y), (mouse_pts[len(mouse_pts) - 2][0], mouse_pts[len(mouse_pts) - 2][1]),
                          LINE_COLOR, LINE_THICK)
-                if len(mouse_pts) == 3:
-                    cv2.line(frame, (x, y), (mouse_pts[0][0], mouse_pts[0][1]), LINE_COLOR, LINE_THICK)
+            if len(mouse_pts) == 4:
+                cv2.line(frame, (x, y), (mouse_pts[0][0], mouse_pts[0][1]), LINE_COLOR, LINE_THICK)
         else:
             cv2.circle(frame, (x, y), DOT_SIZE, DISTANCE_DOT_COLOR, -1)
-
-        mouse_pts.append((x, y))
+            if len(mouse_pts) == 6:
+                cv2.line(frame, (x, y), (mouse_pts[4][0], mouse_pts[4][1]), DISTANCE_LINE_COLOR, LINE_THICK)
 
 
 videoPath = './video/'
@@ -51,7 +52,6 @@ cv2.setMouseCallback(WINDOW_NAME, mouseCallback)
 
 while True:
     cv2.imshow(WINDOW_NAME, frame)
-    cv2.waitKey(1)
 
     if len(mouse_pts) == 7:
         cv2.destroyWindow(WINDOW_NAME)
@@ -72,7 +72,7 @@ while True:
             yaml.dump(config_data, outfile, default_flow_style=False)
         break
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) == ord('q'):
         break
 
 cv2.destroyAllWindows()

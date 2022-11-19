@@ -31,8 +31,8 @@ def getTransformedGroundPoints(boxes, M):
     return birdPnts
 
 
-def getTransformedPoint(pnts, M):
-    src = np.float32([[pnts]])
+def getTransformedPoint(pnt, M):
+    src = np.float32([[pnt]])
     dst = cv2.perspectiveTransform(src, M)[0][0]
     return dst
 
