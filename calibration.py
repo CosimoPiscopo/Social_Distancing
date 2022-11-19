@@ -4,8 +4,8 @@ import yaml
 
 mouse_pts = []
 DOT_SIZE = 5
-CORNER_DOT = LINE_COLOR = (0, 0, 0)
-DISTANCE_DOT = (255, 0, 0)
+CORNER_DOT_COLOR = LINE_COLOR = (0, 0, 0)
+DISTANCE_DOT_COLOR = (255, 0, 0)
 LINE_THICK = 1
 WINDOW_NAME = 'CalibImage'
 
@@ -13,26 +13,26 @@ WINDOW_NAME = 'CalibImage'
 def mouseCallback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         if len(mouse_pts) < 4:
-            cv2.circle(frame, (x, y), DOT_SIZE, CORNER_DOT, -1)
+            cv2.circle(frame, (x, y), DOT_SIZE, CORNER_DOT_COLOR, -1)
             if 1 <= len(mouse_pts) <= 3:
                 cv2.line(frame, (x, y), (mouse_pts[len(mouse_pts) - 1][0], mouse_pts[len(mouse_pts) - 1][1]),
                          LINE_COLOR, LINE_THICK)
                 if len(mouse_pts) == 3:
                     cv2.line(frame, (x, y), (mouse_pts[0][0], mouse_pts[0][1]), LINE_COLOR, LINE_THICK)
         else:
-            cv2.circle(frame, (x, y), DOT_SIZE, DISTANCE_DOT, -1)
+            cv2.circle(frame, (x, y), DOT_SIZE, DISTANCE_DOT_COLOR, -1)
 
         mouse_pts.append((x, y))
 
+
+videoPath = './video/'
+imgPath = './img/'
+configPath = './conf/'
 
 videoName = input('Inserisci il nome del video: ')
 prefix = os.path.splitext(videoName)[0]
 configName = prefix + '.yml'
 imgName = prefix + '.jpg'
-
-videoPath = './video/'
-imgPath = './img/'
-configPath = './conf/'
 
 vs = cv2.VideoCapture(videoPath + videoName)
 

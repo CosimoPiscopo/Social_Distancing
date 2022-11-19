@@ -41,7 +41,7 @@ prefix = videoData['prefix']
 M, birdImage = utils.birdPerspectiveTransform(cornerPoints, W, H, cv2.imread(imgPath))
 
 pxMinDist = utils.getPxMinDist(cmMinDist, cmCalibDist, calibDistPoint, M)
-pxWarnDist = pxMinDist * 1.2
+pxWarnDist = pxMinDist * 1.3
 
 vs = cv2.VideoCapture(videoPath)
 fps = int(vs.get(cv2.CAP_PROP_FPS))
@@ -140,8 +140,7 @@ while True:
         sW = int(W * birdScale)
         sH = int(H * birdScale)
         tempBird = cv2.resize(tempBird, (sW, sH))
-        tempBird = cv2.rotate(tempBird, cv2.ROTATE_90_CLOCKWISE)
-        result[H - sW:, :sH] = tempBird
+        result[H - sH:, :sW] = tempBird
 
         cv2.imshow(WINDOW_NAME, result)
         outputMovie.write(result)

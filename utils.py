@@ -14,11 +14,11 @@ def birdPerspectiveTransform(cornerPoints, W, H, image):
     src = np.float32(cornerPoints)
     dst = np.float32([[0, 0], [W, 0], [W, H], [0, H]])
     M = cv2.getPerspectiveTransform(src, dst)
-    # birdImage = cv2.warpPerspective(image, M, (W, H))
     birdImage = np.zeros(
         (int(H), int(W), 3), np.uint8
     )
     birdImage[:] = (0, 0, 0)
+    # birdImage = cv2.warpPerspective(image, M, (W, H))
     return M, birdImage
 
 
