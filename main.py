@@ -92,32 +92,32 @@ while True:
             filteredBoxes.append(boxes[i])
 
         birdPoints = utils.getTransformedGroundPoints(filteredBoxes, M)
-        status = np.zeros(len(birdPoints))
+        birdPoints, filteredBoxes = utils.inROI(birdPoints, filteredBoxes, W, H)
+
+        status = np.zeros(len(filteredBoxes))
         tempBird = birdImage.copy()
 
         pairsInfo = []
 
-        listIndexes = list(itertools.combinations(range(len(birdPoints)), 2))
-        for i, pair in enumerate(itertools.combinations(birdPoints, 2)):
-            if utils.inROI(pair[0], W, H) and utils.inROI(pair[1], W, H):
-                idx1 = listIndexes[i][0]
-                idx2 = listIndexes[i][1]
-                dist = math.dist(pair[0], pair[1])
-                if dist <= pxMinDist:
-                    status[idx1] = 1
-                    status[idx2] = 1
-                    pairsInfo.append([idx1, idx2, 1])
-                elif pxMinDist < dist <= pxWarnDist:
-                    if status[idx1] != 1:
-                        status[idx1] = 2
-                    if status[idx2] != 1:
-                        status[idx2] = 2
-                    pairsInfo.append([idx1, idx2, 2])
+        combIndexes = list(itertools.combinations(range(len(birdPoints)), 2))
+        for comb in combIndexes:
+            i = comb[0]
+            j = comb[1]
+            dist = math.dist(birdPoints[i], birdPoints[j])
+            if dist <= pxMinDist:
+                status[i] = 1
+                status[j] = 1
+                pairsInfo.append([i, j, 1])
+            elif pxMinDist < dist <= pxWarnDist:
+                if status[i] != 1:
+                    status[i] = 2
+                if status[j] != 1:
+                    status[j] = 2
+                pairsInfo.append([i, j, 2])
 
-        for index, birdPoint in enumerate(birdPoints):
-            if utils.inROI(birdPoint, W, H):
-                tempBird = utils.printCircle(tempBird, birdPoint, status[index])
-                frame = utils.printRectangle(frame, filteredBoxes[index], status[index])
+        for i, birdPoint in enumerate(birdPoints):
+            tempBird = utils.printCircle(tempBird, birdPoint, status[i])
+            frame = utils.printRectangle(frame, filteredBoxes[i], status[i])
 
         for info in pairsInfo:
             i = info[0]
@@ -129,14 +129,13 @@ while True:
         pnts = np.array(cornerPoints, np.int32)
         cv2.polylines(frame, [pnts], True, LINE_COLOR, thickness=1)
 
-        result = frame.copy()
         sW = int(W * birdScale)
         sH = int(H * birdScale)
         tempBird = cv2.resize(tempBird, (sW, sH))
-        result[H - sH:, :sW] = tempBird
+        frame[H - sH:, :sW] = tempBird
 
-        cv2.imshow(WINDOW_NAME, result)
-        outputMovie.write(result)
+        cv2.imshow(WINDOW_NAME, frame)
+        outputMovie.write(frame)
 
         if cv2.waitKey(1) == ord('q'):
             break

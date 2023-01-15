@@ -23,12 +23,12 @@ def birdPerspectiveTransform(cornerPoints, W, H, image):
 
 
 def getTransformedGroundPoints(boxes, M):
-    birdPnts = []
+    birdPoints = []
     for box in boxes:
         pnt = [int(box[0] + (box[2] * 0.5)), int(box[1] + box[3])]
         t_pnt = getTransformedPoint(pnt, M)
-        birdPnts.append(t_pnt)
-    return birdPnts
+        birdPoints.append(t_pnt)
+    return birdPoints
 
 
 def getTransformedPoint(pnt, M):
@@ -44,15 +44,17 @@ def getPxMinDist(cmMinDist, cmCalibDist, pnts, M):
     return pxMinDist
 
 
-def inROI(pnt, width, height):
-    if 0 < pnt[0] < width and 0 < pnt[1] < height:
-        return True
-    else:
-        return False
+def inROI(birdPoints, boxes, W, H):
+    filtBirdPnts = []
+    filtBox = []
+    for i, pnt in enumerate(birdPoints):
+        if 0 < pnt[0] < W and 0 < pnt[1] < H:
+            filtBirdPnts.append(pnt)
+            filtBox.append(boxes[i])
+    return filtBirdPnts, filtBox
 
 
-def printCircle(frame, centerPnt, status):
-    color = None
+def statusColor(status):
     match status:
         case 0:
             color = COLOR_GREEN
@@ -60,35 +62,24 @@ def printCircle(frame, centerPnt, status):
             color = COLOR_RED
         case 2:
             color = COLOR_YELLOW
+    return color
 
+
+def printCircle(frame, centerPnt, status):
+    color = statusColor(status)
     cv2.circle(frame, centerPnt.astype(int), BIG_CIRCLE, color, 2)
     cv2.circle(frame, centerPnt.astype(int), SMALL_CIRCLE, color, -1)
     return frame
 
 
 def printRectangle(frame, box, status):
-    color = None
-    match status:
-        case 0:
-            color = COLOR_GREEN
-        case 1:
-            color = COLOR_RED
-        case 2:
-            color = COLOR_YELLOW
+    color = statusColor(status)
     cv2.rectangle(frame, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]), color, 2)
     return frame
 
 
 def printLine(frame, box1, box2, status):
-    color = None
-    match status:
-        case 0:
-            color = COLOR_GREEN
-        case 1:
-            color = COLOR_RED
-        case 2:
-            color = COLOR_YELLOW
-
+    color = statusColor(status)
     x, y, w, h = box1[:]
     x1, y1, w1, h1 = box2[:]
     frame = cv2.line(frame, (int(x + w / 2), int(y + h / 2)), (int(x1 + w1 / 2), int(y1 + h1 / 2)), color, 2)
@@ -96,13 +87,6 @@ def printLine(frame, box1, box2, status):
 
 
 def printBirdLine(frame, pnt1, pnt2, status):
-    color = None
-    match status:
-        case 0:
-            color = COLOR_GREEN
-        case 1:
-            color = COLOR_RED
-        case 2:
-            color = COLOR_YELLOW
+    color = statusColor(status)
     frame = cv2.line(frame, pnt1.astype(int), pnt2.astype(int), color, 2)
     return frame
